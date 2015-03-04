@@ -55,7 +55,7 @@ class RKernel(Kernel):
 
         # Set up output handlers
         ri.globalenv['iopub'] = ri.rternalize(self.iopub)
-        ri.globalenv['.set_error_status'] = ri.rternalize(self.set_error_status)
+        ri.globalenv['.report_error'] = ri.rternalize(self.report_error)
         with open(pjoin(dirname(__file__), 'init.r'), 'r') as f:
             ro.r(f.read())
 
@@ -67,9 +67,19 @@ class RKernel(Kernel):
         self.send_response(self.iopub_socket, msg_type[0], content)
 
     error = None
+    silent = False
 
-    def set_error_status(self, e):
+    def report_error(self, e):
         self.error = e[0]
+        if not self.silent:
+            import sys
+            print(self.error, file=sys.__stdout__)
+            msg_content =  {'ename': 'ERROR',
+                            'evalue': self.error,
+                            'traceback': [self.error],
+                            'execution_count': self.execution_count
+                           }
+            self.send_response(self.iopub_socket, 'error', msg_content)
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
@@ -77,8 +87,8 @@ class RKernel(Kernel):
             return {'status': 'ok', 'execution_count': self.execution_count,
                     'payload': [], 'user_expressions': {}}
 
+        self.silent = silent
         ro.globalenv['.execution_count'] = self.execution_count
-        ro.globalenv['.silent'] = silent
 
         oh = self.silent_output_handler if silent else self.output_handler
 
@@ -90,7 +100,7 @@ class RKernel(Kernel):
             # TODO: this branch doesn't happen
             interrupted = True
         except ri.RRuntimeError as e:
-            error = e.args[0]
+            self.report_error(e.args[0])
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}

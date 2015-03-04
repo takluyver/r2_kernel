@@ -30,16 +30,11 @@ get_plot_options <- function(){
 }
 
 handle_error = function(e) {
-    err <- list(ename="ERROR", evalue=toString(e), traceback=list(toString(e)))
-    .set_error_status(toString(e))
-    if (!.silent) {
-        iopub("error", list(ename="ERROR", evalue=toString(e), traceback=list(),
-                        execution_count=.execution_count))
-    }
+    .report_error(toString(e))
 }
 
 silent_output_handler = new_output_handler(text=identity, graphics=identity,
-    message=identity, warning=identity, value=identity)
+    message=identity, warning=identity, value=identity, error=handle_error)
 
 handle_value = function (obj) {
     data = list()
@@ -91,3 +86,4 @@ library(IRdisplay)
 displayenv = environment(display)
 unlockBinding("base_display", displayenv)
 assign('base_display', .base_display, pos=displayenv)
+rm(displayenv)
