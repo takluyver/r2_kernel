@@ -43,6 +43,7 @@ setup(name='r2_kernel',
       author_email='thomas@kluyver.me.uk',
       url='https://github.com/takluyver/r2_kernel',
       packages=['r2_kernel'],
+      package_data={'r2_kernel': ['init.r']},
       cmdclass={'install': install_with_kernelspec},
       install_requires=['IPython>=3', 'rpy2'],
       classifiers = [
