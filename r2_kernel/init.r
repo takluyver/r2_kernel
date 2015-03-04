@@ -5,6 +5,30 @@ namedlist <- function() {
     return(setNames(list(), character(0)))
 }
 
+plot_options=new.env()
+
+#'Set options for plotting
+#'
+#'IRkernel displays plots in the notebook with calls to png().
+#'This function allows to set the variables that will be passed on to
+#'png(), for example width or height, see help(png).
+#' @param ... options that will be passed to  png()
+#' @export
+set_plot_options <- function(...){
+    options <- list(...)
+    for(opt in names(options)){
+        assign( opt, options[[opt]], plot_options )
+    }
+}
+
+#'Get options for plotting
+#'
+#'Use set_plot_options() for modifying.
+#' @export
+get_plot_options <- function(){
+    return(as.list(plot_options))
+}
+
 handle_error = function(e) {
     err <- list(ename="ERROR", evalue=toString(e), traceback=list(toString(e)))
     .set_error_status(toString(e))
@@ -52,3 +76,18 @@ output_handler = new_output_handler(
     error = handle_error,
     value = handle_value
 )
+
+.base_display  = function(data, metadata=NULL) {
+    if (is.null(metadata)) {
+        metadata = namedlist()
+    }
+    iopub("display_data", list(data=data, metadata=metadata)
+        )
+    invisible(T)
+}
+
+# Push the display function into the IRdisplay namespace
+library(IRdisplay)
+displayenv = environment(display)
+unlockBinding("base_display", displayenv)
+assign('base_display', .base_display, pos=displayenv)
