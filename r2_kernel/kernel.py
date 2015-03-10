@@ -72,8 +72,6 @@ class RKernel(Kernel):
     def report_error(self, e):
         self.error = e[0]
         if not self.silent:
-            import sys
-            print(self.error, file=sys.__stdout__)
             msg_content =  {'ename': 'ERROR',
                             'evalue': self.error,
                             'traceback': [self.error],
