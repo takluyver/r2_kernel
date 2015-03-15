@@ -72,6 +72,18 @@ output_handler = new_output_handler(
     value = handle_value
 )
 
+# Set the pager function to display help output
+options(pager=function(files, header, title, delete.file) {
+  text=title
+  for (path in files) {
+    text = c(text, header, readLines(path))
+  }
+  if (delete.file) file.remove(files)
+  data = namedlist()
+  data['text/plain'] = paste(text, collapse="\n")
+  .add_payload('page', list(data=data))
+})
+
 .base_display  = function(data, metadata=NULL) {
     if (is.null(metadata)) {
         metadata = namedlist()

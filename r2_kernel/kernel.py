@@ -56,15 +56,23 @@ class RKernel(Kernel):
         # Set up output handlers
         ri.globalenv['iopub'] = ri.rternalize(self.iopub)
         ri.globalenv['.report_error'] = ri.rternalize(self.report_error)
+        ri.globalenv['.add_payload'] = ri.rternalize(self.add_payload)
         with open(pjoin(dirname(__file__), 'init.r'), 'r') as f:
             ro.r(f.read())
 
         self.silent_output_handler = ri.globalenv['silent_output_handler']
         self.output_handler = ri.globalenv['output_handler']
+        
+        self.payloads = []
 
     def iopub(self, msg_type, content):
         content = pre_json_convert(content)
         self.send_response(self.iopub_socket, msg_type[0], content)
+
+    def add_payload(self, source, content):
+        content = pre_json_convert(content)
+        content.update(source=source[0])
+        self.payloads.append(content)
 
     error = None
     silent = False
@@ -91,6 +99,7 @@ class RKernel(Kernel):
         oh = self.silent_output_handler if silent else self.output_handler
 
         self.error = None
+        self.payloads = []
         interrupted = False
         try:
             evaluate.evaluate(code, envir=ri.globalenv, output_handler=oh)
@@ -107,4 +116,4 @@ class RKernel(Kernel):
                     'ename': 'ERROR', 'evalue': self.error, 'traceback': [self.error]}
         else:
             return {'status': 'ok', 'execution_count': self.execution_count,
-                    'payload': [], 'user_expressions': {}}
+                    'payload': self.payloads, 'user_expressions': {}}
